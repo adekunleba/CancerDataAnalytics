@@ -50,7 +50,8 @@ def tweet_search(api, query, max_tweets, max_id, since_id, geocode):
                 print('no tweets found')
                 break
             searched_tweets.extend(new_tweets)
-            max_id = new_tweets[-1].id
+            new_list = [new_tweets[x] for x in list(new_tweets.keys())]
+            max_id = new_list[-1]['max_id']
         except twython.TwythonError:
             print('exception raised, waiting 15 minutes')
             print('(until:', dt.datetime.now()+dt.timedelta(minutes=15), ')')
@@ -63,7 +64,7 @@ def write_tweets(tweets, filename):
 
     with open(filename, 'a') as f:
         for tweet in tweets:
-            json.dump(tweet._json, f)
+            json.dump(tweet, f)
             f.write('\n')
 
 
@@ -85,9 +86,10 @@ def get_tweet_id(api, date='', days_ago=9, query='a'):
         tweet_date = '{0}-{1:0>2}-{2:0>2}'.format(td.year, td.month, td.day)
         # get list of up to 10 tweets
         tweet = api.search(q=query, count=10, until=tweet_date)
-        print('search limit (start/stop):',tweet.items()[0].created_at)
+        new_list = [tweet[x] for x in list(tweet.keys())]
+        print('search limit (start/stop):',new_list[0][0]['created_at'])
         # return the id of the first tweet in the list
-        return tweet.items()[0].id
+        return new_list[0][0]['id']
 
 def main():
     search_phrases = ['Nigeria', '2016', 'economy', 'youth',
@@ -111,7 +113,7 @@ def main():
         os.makedirs(os.path.dirname(json_file_root), exist_ok=True)
         #Create a folder each for each search_phrase(sp), exist_ok in makedirs
         #...checks if dir already exist or else make
-        read_IDs = False #Ques what read_ids is doing
+        read_IDs = True #Ques what read_ids is doing
         
         if max_days_old - min_days_old == 1:
             d = dt.datetime.now() - dt.timedelta(days=min_days_old)
@@ -124,7 +126,7 @@ def main():
         json_file = json_file_root + '_' + day + '.json'
         if os.path.isfile(json_file):
             print('Appending tweets to file named: ',json_file)
-            read_IDs = True
+            read_IDs = False
             
         #Authorize the twython_conn() 
         api = twython_conn()
